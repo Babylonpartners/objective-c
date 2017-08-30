@@ -840,7 +840,19 @@ NS_ASSUME_NONNULL_END
 #else   
         pn_lock(&_lock, ^{ self.dataTaskToOperationMap[taskIdentifier] = @(operationType); });
 #endif
-        [task resume];
+
+        if (operationType == PNUnsubscribeOperation) {
+            // Cancel all the outstanding tasks when we are unsubscribing.
+            [_session getAllTasksWithCompletionHandler:^(NSArray<NSURLSessionTask *> *tasks) {
+                for (NSURLSessionTask *task in tasks) {
+                    [task cancel];
+                }
+
+                [task resume];
+            }];
+        } else {
+            [task resume];
+        }
     }
     else {
         
